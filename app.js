@@ -5,7 +5,10 @@ const mongoose = require('mongoose');
 app.set('view engine', 'ejs')
 app.use(express.static('public'))
 // CustomerSchema <= ustomerSchema
-const Mydata = require('./modeles/CustomerSchema');
+const UserCustomer = require('./modeles/CustomerSchema');
+var moment = require('moment');
+var methodOverride = require('method-override')
+app.use(methodOverride('_method'))
 
 // Middleware body-parser pour analyser les requêtes POST
 const bodyParser = require('body-parser');
@@ -15,11 +18,13 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Get request
 app.get('/', (req, res) => {
 
-  res.render("index",{mytitle:"Home page"})
+  //res.render("index",{mytitle:"Home page"})
  // result == array of object
  
-// Mydata.find().then((result)=>
-// .catch((err)=>{console.log(err)})
+ UserCustomer.find()
+ .then(result=>{res.render("index",{mytitle:"Home page",arrayCustomer:result,moment:moment});})
+ .catch((err)=> {console.log(err)})
+
 });
 
 app.get('/user/add.html', (req, res) => {
@@ -34,29 +39,16 @@ app.get('/user/edit.html', (req, res) => {
   res.render("user/search",{mytitle:"Search"})
   });
 
-  app.get('/user/view.html', (req, res) => {
-    res.render("user/view",{mytitle:"View"})
-    });  
+ 
 
 // Post request 
-
 app.post('/user/add.html', (req, res) => {
   // Création d'une nouvelle instance de Mydata avec les données reçues du formulaire
-  const userData = new Mydata({
-    nom: req.body.nom,
-    prenom: req.body.prenom,
-    age: req.body.age,
-    telephon: req.body.telephon,
-    email: req.body.email,
-    paye: req.body.paye,
-    genre: req.body.genre,
-
-  });
+  const userData = new UserCustomer(req.body);
 
   // Sauvegarde des données dans la base de données
   userData.save()
     .then(() => {
-    
       console.log(req.body); 
       // Réponse HTTP en cas de succès
       res.status(200).send('Données enregistrées avec succès');
@@ -66,8 +58,18 @@ app.post('/user/add.html', (req, res) => {
       // Réponse HTTP en cas d'erreur
       res.status(500).send('Erreur lors de l\'enregistrement des données');
     });
-    res.redirect("/")
 });
+
+
+
+
+app.delete("/edit/:id", (req, res) => {
+  UserCustomer.deleteOne({ _id: req.params.id }).then((result) => {
+  res.redirect("/");
+  });
+}); 
+
+
 
 
 // Connexion à la base de données MongoDB
@@ -112,6 +114,22 @@ app.post("/", (req, res) => {
 
 
 
+app.get('/edit/:_id', (req, res) => {
+   
+  UserCustomer.findById(req.params._id)
+  .then(result=>{res.render("user/edit",{mytitle:"Home page",idCustomer:result});})
+  .catch((err)=> {console.log(err)})
+
+  }); 
+
+app.get('/view/:_id', (req, res) => {
+   
+  UserCustomer.findById(req.params._id)
+  .then(result=>{res.render("user/view",{mytitle:"Home page",idCustomer:result});})
+  .catch((err)=> {console.log(err)})
+
+  }); 
+
 
 // Auto refrsh :
  
@@ -130,3 +148,13 @@ liveReloadServer.server.once("connection", () => {
     liveReloadServer.refresh("/");
   }, 100);
 });
+
+
+//// explication
+  // nom: req.body.nom,
+  // prenom: req.body.prenom,
+  // age: req.body.age,
+  // telephon: req.body.telephon,             == req.body
+  // email: req.body.email,
+  // paye: req.body.paye,
+  // genre: req.body.genre,
